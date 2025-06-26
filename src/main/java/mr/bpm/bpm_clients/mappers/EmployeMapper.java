@@ -18,7 +18,9 @@ public class EmployeMapper {
                 .nom(employe.getNom())
                 .identifiantConnexion(employe.getIdentifiantConnexion())
                 .role(employe.getRole())
+                .status(employe.getStatus())
                 // On ne mappe JAMAIS le mot de passe vers le modèle
+                .photoUrl(employe.getPhotoUrl())
                 .build();
     }
 
@@ -36,6 +38,8 @@ public class EmployeMapper {
                 .identifiantConnexion(employeModel.getIdentifiantConnexion())
                 .motDePasse(employeModel.getMotDePasse()) // Le mot de passe est mappé ici
                 .role(employeModel.getRole())
+                .status(employeModel.getStatus())
+                .photoUrl(employeModel.getPhotoUrl())
                 .build();
     }
 }

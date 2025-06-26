@@ -36,7 +36,7 @@ public class SecurityConfig {
                         // CHANGEMENT 3 : Remplacement de antMatchers par requestMatchers
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/clients/block/**", "/clients/otp/**").hasAnyRole("ADMIN", "SUPERVISEUR")
-                        .requestMatchers("/clients/unblock/**", "/employes/**").hasRole("ADMIN")
+                        .requestMatchers("/clients/unblock/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
 

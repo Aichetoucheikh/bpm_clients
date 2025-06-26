@@ -3,12 +3,15 @@ package mr.bpm.bpm_clients;
 // Imports nécessaires
 import mr.bpm.bpm_clients.entities.Employe;
 import mr.bpm.bpm_clients.entities.Role;
+import mr.bpm.bpm_clients.models.EmployeStatus;
 import mr.bpm.bpm_clients.repositories.EmployeRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
 
 @SpringBootApplication
 public class BpmClientsApplication {
@@ -28,38 +31,36 @@ public class BpmClientsApplication {
 	@Bean
 	CommandLineRunner commandLineRunner(EmployeRepository employeRepository, PasswordEncoder passwordEncoder) {
 		return args -> {
-			// On vérifie si la table des employés est vide avant d'insérer
 			if (employeRepository.count() == 0) {
-				System.out.println("Base de données vide. Création des utilisateurs par défaut...");
-
-				// Création de l'ADMIN
+				// ...
 				Employe admin = Employe.builder()
 						.nom("Admin Principal")
 						.identifiantConnexion("admin")
-						.motDePasse(passwordEncoder.encode("admin123")) // Mot de passe en clair haché
+						.motDePasse(passwordEncoder.encode("admin123"))
 						.role(Role.ADMIN)
+						.status(EmployeStatus.ACTIF)
+						.photoUrl("https://i.pravatar.cc/150?u=admin") // AJOUTER
 						.build();
 
-				// Création du SUPERVISEUR
 				Employe supervisor = Employe.builder()
 						.nom("Superviseur Test")
 						.identifiantConnexion("superviseur")
 						.motDePasse(passwordEncoder.encode("sup123"))
 						.role(Role.SUPERVISEUR)
+						.status(EmployeStatus.ACTIF)
+						.photoUrl("https://i.pravatar.cc/150?u=supervisor") // AJOUTER
 						.build();
 
-				// Création de l'AGENT
 				Employe agent = Employe.builder()
 						.nom("Agent Bankily")
 						.identifiantConnexion("agent")
 						.motDePasse(passwordEncoder.encode("agent123"))
 						.role(Role.AGENT_BANKILY)
+						.status(EmployeStatus.ACTIF)
+						.photoUrl("https://i.pravatar.cc/150?u=agent") // AJOUTER
 						.build();
 
-				// Sauvegarde de tous les utilisateurs
-				employeRepository.save(admin);
-				employeRepository.save(supervisor);
-				employeRepository.save(agent);
+				employeRepository.saveAll(List.of(admin, supervisor, agent));
 
 				System.out.println("Utilisateurs par défaut créés avec succès !");
 				System.out.println("Admin -> identifiant: admin, mdp: admin123");

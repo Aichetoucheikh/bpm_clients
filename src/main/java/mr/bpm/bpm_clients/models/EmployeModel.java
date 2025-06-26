@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import mr.bpm.bpm_clients.entities.Role;
+import mr.bpm.bpm_clients.models.EmployeStatus;
 
 @Data
 @Builder
@@ -17,9 +18,8 @@ public class EmployeModel {
     private String nom;
     private String identifiantConnexion;
     private Role role;
-
-    // Ce champ ne sera utilisé que pour la création/mise à jour du mot de passe.
-    // Il ne sera jamais renvoyé au client.
+    private EmployeStatus status;
+    private String photoUrl;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String motDePasse;
 }

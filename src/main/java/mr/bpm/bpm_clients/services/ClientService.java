@@ -1,9 +1,11 @@
 package mr.bpm.bpm_clients.services;
 
 import mr.bpm.bpm_clients.entities.Client;
+import mr.bpm.bpm_clients.entities.Role;
 import mr.bpm.bpm_clients.mappers.ClientMapper;
 import mr.bpm.bpm_clients.models.ClientModel;
 import mr.bpm.bpm_clients.entities.ClientStatus;
+import mr.bpm.bpm_clients.models.EmployeModel;
 import mr.bpm.bpm_clients.repositories.ClientRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +69,9 @@ public class ClientService {
         clientExistant.setCif(clientModel.getCif());
         clientExistant.setPhone(clientModel.getPhone());
 
+        clientExistant.setNni(clientModel.getNni());
+        clientExistant.setSexe(clientModel.getSexe());
+
         // IMPORTANT : On sauvegarde l'entité mise à jour
         Client updatedClient = clientRepository.save(clientExistant);
         return ClientMapper.map(updatedClient);
@@ -80,37 +85,40 @@ public class ClientService {
         clientRepository.deleteById(id);
     }
 
+// ... dans la classe ClientService
+
     @Transactional
-    public ClientModel blockClient(Long clientId) {
-        // On récupère l'entité
-        Client clientEntity = clientRepository.findById(clientId)
+    public ClientModel bloquerClient(Long clientId, String motif) { // Pas besoin de l'employé ici, SecurityConfig gère la permission
+        Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'id: " + clientId));
 
-        if (clientEntity.getStatus() == ClientStatus.BLOCKED) {
-            throw new IllegalStateException("Le client " + clientEntity.getName() + " est déjà bloqué.");
-        }
-        clientEntity.setStatus(ClientStatus.BLOCKED);
+        client.setStatus(ClientStatus.BLOCKED);
+        client.setMotifBlocage(motif); // On sauvegarde le motif
 
-        // On sauvegarde l'entité
-        Client updatedClient = clientRepository.save(clientEntity);
+        Client updatedClient = clientRepository.save(client);
+
+        // Grâce au Mapper mis à jour, le motif sera inclus dans la réponse.
         return ClientMapper.map(updatedClient);
     }
 
+
     @Transactional
-    public ClientModel unblockClient(Long clientId) {
-        // On récupère l'entité
-        Client clientEntity = clientRepository.findById(clientId)
+    public ClientModel debloquerClient(Long clientId, EmployeModel employeActuel) {
+        if (employeActuel.getRole() != Role.ADMIN) {
+            throw new SecurityException("Accès refusé: Seul un administrateur peut débloquer un client.");
+        }
+        Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'id: " + clientId));
 
-        if (clientEntity.getStatus() == ClientStatus.ACTIVE) {
-            throw new IllegalStateException("Le client " + clientEntity.getName() + " est déjà actif.");
-        }
-        clientEntity.setStatus(ClientStatus.ACTIVE);
+        client.setStatus(ClientStatus.ACTIVE);
+        client.setMotifBlocage(null); // On efface le motif lors du déblocage
 
-        // On sauvegarde l'entité
-        Client updatedClient = clientRepository.save(clientEntity);
+        Client updatedClient = clientRepository.save(client);
         return ClientMapper.map(updatedClient);
     }
+
+// Assurez-vous que le ClientMapper propage bien le nouveau champ.
+// ... le reste de votre service
 
     public String getClientOtp(Long clientId) {
 
@@ -118,5 +126,9 @@ public class ClientService {
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'id: " + clientId));
 
         return "L'OTP pour le client '" + clientEntity.getName() + "' est : " + clientEntity.getCurrentOtp();
+    }
+    public Page<ClientModel> searchClientsByPhone(String phone, int page, int size) {
+        Page<Client> clientsPage = clientRepository.findByPhoneContaining(phone, PageRequest.of(page, size));
+        return clientsPage.map(ClientMapper::map);
     }
 }

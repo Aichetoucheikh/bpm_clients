@@ -5,10 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import mr.bpm.bpm_clients.models.EmployeStatus; // NOUVEL IMPORT
+import mr.bpm.bpm_clients.entities.Role;
 
 @Entity
-@Table(name = "employes") // Nom de la table en base de données
+@Table(name = "employes")
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,10 +26,15 @@ public class Employe {
     @Column(unique = true, nullable = false)
     private String identifiantConnexion;
 
-    //@Column(nullable = false)
-    private String motDePasse; // Important: ce sera le mot de passe haché
+    private String motDePasse;
 
-    @Enumerated(EnumType.STRING) // Stocke le nom du rôle ("ADMIN") plutôt qu'un chiffre
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    // --- NOUVEAU CHAMP ---
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EmployeStatus status;
+    private String photoUrl;
 }

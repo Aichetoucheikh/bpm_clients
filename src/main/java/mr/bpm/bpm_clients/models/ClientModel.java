@@ -31,5 +31,9 @@ public class ClientModel {
 
     // @Enumerated(EnumType.STRING) // Recommandé pour stocker le nom du statut en BDD
     private ClientStatus status;
-    private String currentOtp; // OTP actuel du client (pour démo, gestion réelle plus complexe)
+    private String motifBlocage;
+    private String currentOtp; // OTP actuel du client
+    private String nni;
+    private String sexe;
+    private String photoUrl;
 }

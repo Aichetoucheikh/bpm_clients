@@ -9,9 +9,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/employes") // Un endpoint dédié pour la gestion des employés
+@RequestMapping("/api/employes") // L'URL de base pour toutes les routes
+@PreAuthorize("hasRole('ADMIN')") // Protège TOUTES les routes de ce contrôleur
 public class EmployeController {
 
     private final EmployeService employeService;
@@ -27,13 +29,15 @@ public class EmployeController {
             EmployeModel nouvelEmploye = employeService.creerEmploye(employeModel);
             return new ResponseEntity<>(nouvelEmploye, HttpStatus.CREATED);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping
-    public ResponseEntity<List<EmployeModel>> listerEmployes() {
-        List<EmployeModel> employes = employeService.trouverTousLesEmployes();
+    public ResponseEntity<List<EmployeModel>> listerOuRechercherEmployes(@RequestParam(required = false) String recherche) {
+        List<EmployeModel> employes = employeService.rechercherEmployes(recherche);
         return ResponseEntity.ok(employes);
     }
 
@@ -44,25 +48,28 @@ public class EmployeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> mettreAJourEmploye(@PathVariable Long id, @RequestBody EmployeModel employeModel) {
-        try {
-            EmployeModel employeMisAJour = employeService.updateEmploye(id, employeModel);
-            return ResponseEntity.ok(employeMisAJour);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    // Les autres endpoints restent les mêmes... (suspendre, reactiver, etc.)
+    @PostMapping("/{id}/suspend")
+    public ResponseEntity<EmployeModel> suspendreEmploye(@PathVariable Long id) {
+        EmployeModel employe = employeService.suspendreEmploye(id);
+        return ResponseEntity.ok(employe);
+    }
+
+    @PostMapping("/{id}/reactivate")
+    public ResponseEntity<EmployeModel> reactiverEmploye(@PathVariable Long id) {
+        EmployeModel employe = employeService.reactiverEmploye(id);
+        return ResponseEntity.ok(employe);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> supprimerEmploye(@PathVariable Long id) {
         try {
             employeService.deleteEmploye(id);
-            return ResponseEntity.noContent().build(); // Statut 204 No Content
+            return ResponseEntity.noContent().build();
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
 }
