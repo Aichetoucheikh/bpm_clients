@@ -1,17 +1,22 @@
+// src/main/java/mr/bpm/bpm_clients/BpmClientsApplication.java
 package mr.bpm.bpm_clients;
 
-// Imports nécessaires
 import mr.bpm.bpm_clients.entities.Employe;
+import mr.bpm.bpm_clients.entities.Permission;
 import mr.bpm.bpm_clients.entities.Role;
 import mr.bpm.bpm_clients.models.EmployeStatus;
 import mr.bpm.bpm_clients.repositories.EmployeRepository;
+import mr.bpm.bpm_clients.repositories.PermissionRepository;
+import mr.bpm.bpm_clients.repositories.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @SpringBootApplication
 public class BpmClientsApplication {
@@ -20,54 +25,45 @@ public class BpmClientsApplication {
 		SpringApplication.run(BpmClientsApplication.class, args);
 	}
 
-	/**
-	 * NOUVEAU CODE : Ce bean s'exécutera au démarrage de l'application.
-	 * Il va créer des utilisateurs par défaut si la base de données est vide.
-	 *
-	 * @param employeRepository Le repository pour sauvegarder les employés.
-	 * @param passwordEncoder Le service pour hacher les mots de passe.
-	 * @return Une instance de CommandLineRunner.
-	 */
 	@Bean
-	CommandLineRunner commandLineRunner(EmployeRepository employeRepository, PasswordEncoder passwordEncoder) {
+	@Transactional
+		// Important pour les opérations sur les entités liées
+	CommandLineRunner commandLineRunner(EmployeRepository employeRepository,
+										RoleRepository roleRepository,
+										PermissionRepository permissionRepository,
+										PasswordEncoder passwordEncoder) {
 		return args -> {
-			if (employeRepository.count() == 0) {
-				// ...
+			// Ne s'exécute que si la base de données est vide pour éviter les doublons
+			if (permissionRepository.count() == 0) {
+				System.out.println("Création des permissions par défaut...");
+				Permission manageEmployes = new Permission("MANAGE_EMPLOYES", "Gérer les employés");
+				Permission manageRoles = new Permission("MANAGE_ROLES_PERMISSIONS", "Gérer les rôles et permissions");
+				Permission blockClient = new Permission("BLOCK_CLIENT", "Bloquer un client");
+				Permission unblockClient = new Permission("UNBLOCK_CLIENT", "Débloquer un client");
+				permissionRepository.saveAll(List.of(manageEmployes, manageRoles, blockClient, unblockClient));
+
+				System.out.println("Création des rôles et de l'admin par défaut...");
+
+				// Rôle ADMIN avec toutes les permissions
+				Role adminRole = new Role("ADMINISTRATEUR");
+				adminRole.setPermissions(Set.copyOf(permissionRepository.findAll()));
+				roleRepository.save(adminRole);
+
+				// Rôle SUPERVISEUR
+				Role supervisorRole = new Role("SUPERVISEUR");
+				supervisorRole.setPermissions(Set.of(blockClient));
+				roleRepository.save(supervisorRole);
+
+				// Création de l'employé admin
 				Employe admin = Employe.builder()
 						.nom("Admin Principal")
 						.identifiantConnexion("admin")
 						.motDePasse(passwordEncoder.encode("admin123"))
-						.role(Role.ADMIN)
+						.roles(Set.of(adminRole))
 						.status(EmployeStatus.ACTIF)
-						.photoUrl("https://i.pravatar.cc/150?u=admin") // AJOUTER
 						.build();
-
-				Employe supervisor = Employe.builder()
-						.nom("Superviseur Test")
-						.identifiantConnexion("superviseur")
-						.motDePasse(passwordEncoder.encode("sup123"))
-						.role(Role.SUPERVISEUR)
-						.status(EmployeStatus.ACTIF)
-						.photoUrl("https://i.pravatar.cc/150?u=supervisor") // AJOUTER
-						.build();
-
-				Employe agent = Employe.builder()
-						.nom("Agent Bankily")
-						.identifiantConnexion("agent")
-						.motDePasse(passwordEncoder.encode("agent123"))
-						.role(Role.AGENT_BANKILY)
-						.status(EmployeStatus.ACTIF)
-						.photoUrl("https://i.pravatar.cc/150?u=agent") // AJOUTER
-						.build();
-
-				employeRepository.saveAll(List.of(admin, supervisor, agent));
-
-				System.out.println("Utilisateurs par défaut créés avec succès !");
-				System.out.println("Admin -> identifiant: admin, mdp: admin123");
-				System.out.println("Superviseur -> identifiant: superviseur, mdp: sup123");
-				System.out.println("Agent -> identifiant: agent, mdp: agent123");
-			} else {
-				System.out.println("La base de données contient déjà des utilisateurs. Aucune action requise.");
+				employeRepository.save(admin);
+				System.out.println("Utilisateur admin créé : admin / admin123");
 			}
 		};
 	}

@@ -1,5 +1,6 @@
 package mr.bpm.bpm_clients.controlers;
 
+import mr.bpm.bpm_clients.models.LoginResponse;
 import mr.bpm.bpm_clients.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,18 +18,11 @@ public class AuthController {
         this.authService = authService;
     }
 
-    /**
-     * Endpoint pour la connexion.
-     * Accepte un corps JSON avec "username" et "password".
-     */
-
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody Map<String, String> userInput) {
-        // CORRECTION : Utiliser les clés qui correspondent aux paramètres du service
+    public LoginResponse login(@RequestBody Map<String, String> userInput) {
         String identifiant = userInput.get("identifiantConnexion");
         String motDePasse = userInput.get("motDePasse");
 
-        // L'appel au service est maintenant correct
         return authService.login(identifiant, motDePasse);
     }
 }

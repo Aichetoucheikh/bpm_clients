@@ -2,6 +2,7 @@ package mr.bpm.bpm_clients.services;
 
 import mr.bpm.bpm_clients.entities.Client;
 import mr.bpm.bpm_clients.entities.Role;
+import mr.bpm.bpm_clients.exceptions.ResourceNotFoundException;
 import mr.bpm.bpm_clients.mappers.ClientMapper;
 import mr.bpm.bpm_clients.models.ClientModel;
 import mr.bpm.bpm_clients.entities.ClientStatus;
@@ -85,40 +86,33 @@ public class ClientService {
         clientRepository.deleteById(id);
     }
 
-// ... dans la classe ClientService
+
 
     @Transactional
-    public ClientModel bloquerClient(Long clientId, String motif) { // Pas besoin de l'employé ici, SecurityConfig gère la permission
+    public ClientModel bloquerClient(Long clientId, String motif) {
         Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'id: " + clientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Client non trouvé avec l'id: " + clientId));
 
         client.setStatus(ClientStatus.BLOCKED);
-        client.setMotifBlocage(motif); // On sauvegarde le motif
+        client.setMotifBlocage(motif);
 
         Client updatedClient = clientRepository.save(client);
-
-        // Grâce au Mapper mis à jour, le motif sera inclus dans la réponse.
         return ClientMapper.map(updatedClient);
     }
-
-
     @Transactional
-    public ClientModel debloquerClient(Long clientId, EmployeModel employeActuel) {
-        if (employeActuel.getRole() != Role.ADMIN) {
-            throw new SecurityException("Accès refusé: Seul un administrateur peut débloquer un client.");
-        }
+    public ClientModel debloquerClient(Long clientId) {
+        // La vérification du rôle a été supprimée car elle est gérée par Spring Security dans le contrôleur
         Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'id: " + clientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Client non trouvé avec l'id: " + clientId));
 
         client.setStatus(ClientStatus.ACTIVE);
-        client.setMotifBlocage(null); // On efface le motif lors du déblocage
+        client.setMotifBlocage(null);
 
         Client updatedClient = clientRepository.save(client);
         return ClientMapper.map(updatedClient);
     }
 
-// Assurez-vous que le ClientMapper propage bien le nouveau champ.
-// ... le reste de votre service
+
 
     public String getClientOtp(Long clientId) {
 

@@ -16,7 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // CHANGEMENT 2 : Nouvelle annotation pour la sécurité des méthodes
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
@@ -31,14 +31,12 @@ public class SecurityConfig {
                 // Désactiver CSRF (non nécessaire pour une API stateless)
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults()) // Enable CORS
-                // Configurer les autorisations de requêtes avec la nouvelle syntaxe
+
                 .authorizeHttpRequests(auth -> auth
-                        // CHANGEMENT 3 : Remplacement de antMatchers par requestMatchers
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/clients/block/**", "/clients/otp/**").hasAnyRole("ADMIN", "SUPERVISEUR")
-                        .requestMatchers("/clients/unblock/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+// ...
 
                 // Configurer la gestion de session en stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -54,9 +52,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Bean nécessaire pour l'injection de l'AuthenticationManager dans d'anciennes configurations
-    // Avec la nouvelle configuration, il est souvent fourni par la config par défaut
-    // mais il est bon de l'exposer explicitement si nécessaire.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();

@@ -7,13 +7,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/employes") // L'URL de base pour toutes les routes
-@PreAuthorize("hasRole('ADMIN')") // Protège TOUTES les routes de ce contrôleur
+@PreAuthorize("hasAuthority('MANAGE_EMPLOYES')") // Protège TOUTES les routes de ce contrôleur
 public class EmployeController {
 
     private final EmployeService employeService;
@@ -60,7 +60,11 @@ public class EmployeController {
         EmployeModel employe = employeService.reactiverEmploye(id);
         return ResponseEntity.ok(employe);
     }
-
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<EmployeModel> assignRoles(@PathVariable Long id, @RequestBody Set<Long> roleIds) {
+        EmployeModel updatedEmploye = employeService.assignRolesToEmploye(id, roleIds);
+        return ResponseEntity.ok(updatedEmploye);
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<?> supprimerEmploye(@PathVariable Long id) {
         try {

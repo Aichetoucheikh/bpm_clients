@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,33 +92,25 @@ public class ClientController {
         }
     }
 
-// --- Ces deux méthodes doivent être en dehors de la méthode delete ci-dessus ---
+
 
     @PostMapping("/{id}/block")
+    @PreAuthorize("hasAuthority('BLOCK_CLIENT')") // Sécurisé par permission
     public ResponseEntity<?> blockClient(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         String motif = payload.get("motif");
         if (motif == null || motif.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Le motif de blocage est obligatoire."));
         }
-
-        try {
-            // Le service renvoie maintenant un ClientModel complet avec le motif
-            ClientModel clientBloque = clientService.bloquerClient(id, motif);
-            return ResponseEntity.ok(clientBloque);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-        }
+        ClientModel clientBloque = clientService.bloquerClient(id, motif);
+        return ResponseEntity.ok(clientBloque);
     }
+
 
     @PostMapping("/{id}/unblock")
+    @PreAuthorize("hasAuthority('UNBLOCK_CLIENT')") // Sécurisé par la permission UNBLOCK_CLIENT
     public ResponseEntity<?> unblockClient(@PathVariable Long id) {
-        // Simulation d’un employé connecté
-        EmployeModel employeConnecte = new EmployeModel();
-        employeConnecte.setRole(Role.ADMIN); // seul ADMIN peut débloquer
-
-        ClientModel clientDebloque = clientService.debloquerClient(id, employeConnecte);
+        // La simulation d'employé a été supprimée. Spring Security s'en occupe.
+        ClientModel clientDebloque = clientService.debloquerClient(id);
         return ResponseEntity.ok(clientDebloque);
     }
-
-
 }
